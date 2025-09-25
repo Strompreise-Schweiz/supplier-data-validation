@@ -1,7 +1,13 @@
-name: "Reusable: Validate supplier & logo (fixed)"
+name: "Reusable: Validate supplier & logo"
 
 on:
-  workflow_call: {}
+  workflow_call:
+    inputs:
+      supplier_schema_version:
+        description: "Supplier schema version to validate against (e.g. v1, v2)"
+        required: true
+        default: "v1"
+        type: string
 
 jobs:
   validate:
@@ -18,24 +24,24 @@ jobs:
       - name: Install ajv + formats
         run: npm i -g ajv-cli@5 ajv-formats
 
-      # 3) Download supplier schema v1 (fixed URL)
-      - name: Download supplier schema v1
+      # 3) Download supplier schema (version from input)
+      - name: Download supplier schema
         run: |
           curl -fsSL \
-            https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/supplier/v1/supplier.schema.json \
+            https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/supplier/${{ inputs.supplier_schema_version }}/supplier.schema.json \
             -o _supplier.schema.json
 
-      # 4) Validate supplier.json (root, strict mode)
+      # 4) Validate supplier.json (strict mode)
       - name: Validate supplier.json
         run: >
           ajv validate
           -c ajv-formats
           -s _supplier.schema.json
-          -d supplier.json
+          -d data/supplier.json
           --spec=draft2020
           --strict=true
 
-      # 5) Validate assets/logo.png (existence, PNG format, 1000x1000) — pure Node.js, no extra deps
+      # 5) Validate assets/logo.png (existence, PNG format, 1000x1000)
       - name: Validate assets/logo.png (PNG, 1000x1000)
         shell: node {0}
         run: |
