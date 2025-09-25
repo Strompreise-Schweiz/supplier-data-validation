@@ -1,0 +1,56 @@
+{
+  "$id": "https://github.com/Strompreise-Schweiz/supplier-data-validation/supplier/v1/supplier.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Supplier",
+  "type": "object",
+  "required": ["id", "name", "location", "website", "email"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string", "format": "uri" },
+    "id": { "type": "string", "pattern": "^[a-z0-9-]{3,}$" },
+    "name": { "type": "string", "minLength": 3 },
+    "website": { "type": "string", "format": "uri" },
+    "email": { "type": "string", "format": "email" },
+
+    "location": {
+      "type": "object",
+      "required": ["address", "coordinates"],
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "type": "object",
+          "required": ["street", "postal_code", "city", "canton", "country"],
+          "additionalProperties": false,
+          "properties": {
+            "street": { "type": "string" },
+            "postal_code": { "type": "string", "pattern": "^[0-9]{4}$" },
+            "city": { "type": "string" },
+            "canton": { "type": "string", "pattern": "^[A-Z]{2}$" },
+            "country": { "type": "string" }
+          }
+        },
+        "coordinates": {
+          "type": "object",
+          "required": ["latitude", "longitude"],
+          "additionalProperties": false,
+          "properties": {
+            "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+            "longitude": { "type": "number", "minimum": -180, "maximum": 180 }
+          }
+        },
+        "map": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": { "type": "string", "enum": ["google", "osm"] },
+            "url": { "type": "string", "format": "uri" },
+            "place_id": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "uid": { "type": "string" },
+    "vse_id": { "type": "string" }
+  }
+}
