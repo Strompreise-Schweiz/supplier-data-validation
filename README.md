@@ -1,5 +1,4 @@
-# supplier-data-validation
-
+# Electricity Supplier Data Validation
 
 This repository contains JSON Schemas used in the **Strompreise Schweiz** project. Schemas define the expected structure of JSON files that energy suppliers (and other partners) publish in their repositories.
 

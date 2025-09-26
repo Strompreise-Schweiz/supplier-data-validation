@@ -3,11 +3,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Supplier",
   "type": "object",
-  "required": ["id", "name", "location", "website", "email"],
+  "required": ["name", "location", "website", "email"],
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string", "format": "uri" },
-    "id": { "type": "string", "pattern": "^[a-z0-9-]{3,}$" },
     "name": { "type": "string", "minLength": 3 },
     "website": { "type": "string", "format": "uri" },
     "email": { "type": "string", "format": "email" },
