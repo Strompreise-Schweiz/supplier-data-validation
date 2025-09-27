@@ -6,11 +6,11 @@ By validating your JSON data against these schemas, we ensure consistent and rel
 
 ## Available Schemas
 
-### Supplier
+### Supplier Power Utility
 
 - **Current version:** `v1`
-- **Schema file:** [`supplier/v1/supplier.schema.json`](./supplier/v1/supplier.schema.json)
-- **Schema URL (for use in JSON files):** https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/supplier/v1/supplier.schema.json
+- **Schema file:** [`suppliers/power-utility/v1/supplier.schema.json`](./suppliers/power-utility/v1/supplier.schema.json)
+- **Schema URL (for use in JSON files):** https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/suppliers/power-utility/v1/supplier.schema.json
 
 ## Versioning Strategy
 

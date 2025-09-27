@@ -28,7 +28,7 @@ jobs:
       - name: Download supplier schema
         run: |
           curl -fsSL \
-            https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/supplier/${{ inputs.supplier_schema_version }}/supplier.schema.json \
+            https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/suppliers/power-utility/${{ inputs.supplier_schema_version }}/supplier.schema.json \
             -o _supplier.schema.json
 
       # 4) Validate supplier.json (strict mode)
