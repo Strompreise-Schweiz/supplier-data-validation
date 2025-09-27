@@ -1,5 +1,5 @@
 {
-  "$id": "https://github.com/Strompreise-Schweiz/supplier-data-validation/suppliers/power-utility/v1/supplier.schema.json",
+  "$id": "https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/suppliers/power-utility/v1/supplier.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Supplier",
   "type": "object",
