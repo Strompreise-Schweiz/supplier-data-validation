@@ -1,7 +1,7 @@
 {
   "$id": "https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/suppliers/power-utility/v1/supplier.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Supplier",
+  "title": "Strompreise Schweiz Supplier",
   "type": "object",
   "required": ["name", "location", "website", "email"],
   "additionalProperties": false,

@@ -1,0 +1,46 @@
+name: "Reusable: Validate static tariff"
+
+on:
+  workflow_call:
+    inputs:
+      tariff_schema_version:
+        description: "Tariff schema version to validate against (e.g. v1, v2)"
+        required: true
+        default: "v1"
+        type: string
+      tariff_name:
+        description: "Expected tariff name to enforce (e.g. 'emn-50')"
+        required: true
+        type: string
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      # 1) Check out the customer repository
+      - uses: actions/checkout@v4
+
+      # 2) Set up Node.js 20
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install ajv + formats
+        run: npm i -g ajv-cli@5 ajv-formats
+
+      # 3) Download tariff schema (version from input)
+      - name: Download tariff schema
+        run: |
+          curl -fsSL \
+            https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/tariffs/static/${{ inputs.tariff_schema_version }}/tariff.schema.json \
+            -o _tariff.schema.json
+
+      # 4) Validate tariff.json (strict mode)
+      - name: Validate tariff.json
+        run: >
+          ajv validate
+          -c ajv-formats
+          -s _tariff.schema.json
+          -d data/tariffs/${{ inputs.tariff_name }}/tariff.json
+          --spec=draft2020
+          --strict=true
