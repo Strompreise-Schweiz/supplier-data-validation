@@ -190,13 +190,14 @@
         "end_timestamp": {
           "type": "string",
           "format": "date-time",
-          "formatExclusiveMinimum": { "$data": "1/start_timestamp" }
+          "formatMinimum": { "$data": "1/start_timestamp" },
+          "not": { "const": { "$data": "1/start_timestamp" } }
         },
         "electricity": { "$ref": "#/$defs/electricityArray" },
-        "grid": { "$ref": "#/$defs/gridArray" },
-        "dso": { "$ref": "#/$defs/dsoArray" },
-        "integrated": { "$ref": "#/$defs/integratedArray" },
-        "feed_in": { "$ref": "#/$defs/feedInArray" },
+        "grid":        { "$ref": "#/$defs/gridArray" },
+        "dso":         { "$ref": "#/$defs/dsoArray" },
+        "integrated":  { "$ref": "#/$defs/integratedArray" },
+        "feed_in":     { "$ref": "#/$defs/feedInArray" },
         "overrides": {
           "type": "array",
           "items": { "$ref": "#/$defs/override" }
