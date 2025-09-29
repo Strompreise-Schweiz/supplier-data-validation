@@ -55,10 +55,6 @@
   },
   "$defs": {
     "hhmm": { "type": "string", "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$" },
-    "unitPeriod": {
-      "type": "string",
-      "enum": ["y","m","w","d","12h","6h","4h","2h","h","30min","15min"]
-    },
     "workItem": {
       "type": "object",
       "additionalProperties": false,

@@ -44,3 +44,4 @@ jobs:
           -d data/tariffs/${{ inputs.tariff_name }}/tariff.json
           --spec=draft2020
           --strict=true
+          --data
