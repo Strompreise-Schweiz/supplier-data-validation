@@ -90,17 +90,8 @@
         },
         "value": { "type": "number", "minimum": 0 },
         "mode": { "enum": ["fixed", "min_charge"] },
-        "min_scope": {
-          "enum": ["integrated", "electricity.work", "grid.work", "dso.work"]
-        },
         "prorate": { "type": "boolean" }
-      },
-      "allOf": [
-        {
-          "if": { "properties": { "mode": { "const": "min_charge" } } },
-          "then": { "required": ["min_scope"] }
-        }
-      ]
+      }
     },
     "electricityArray": {
       "type": "array",
