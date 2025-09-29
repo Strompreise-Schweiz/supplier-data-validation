@@ -122,7 +122,12 @@
           {
             "allOf": [
               { "$ref": "#/$defs/baseItem" },
-              { "properties": { "mode": { "enum": ["fixed","min_charge"] } } }
+              {
+                "type": "object",
+                "properties": {
+                  "mode": { "enum": ["fixed", "min_charge"] }
+                }
+              }
             ]
           }
         ]
@@ -154,7 +159,7 @@
             "required": ["from", "to"],
             "properties": {
               "from": { "$ref": "#/$defs/hhmm" },
-              "to":   { "$ref": "#/$defs/hhmm" }
+              "to": { "$ref": "#/$defs/hhmm" }
             }
           }
         },
@@ -188,10 +193,10 @@
           "formatExclusiveMinimum": { "$data": "1/start_timestamp" }
         },
         "electricity": { "$ref": "#/$defs/electricityArray" },
-        "grid":        { "$ref": "#/$defs/gridArray" },
-        "dso":         { "$ref": "#/$defs/dsoArray" },
-        "integrated":  { "$ref": "#/$defs/integratedArray" },
-        "feed_in":     { "$ref": "#/$defs/feedInArray" },
+        "grid": { "$ref": "#/$defs/gridArray" },
+        "dso": { "$ref": "#/$defs/dsoArray" },
+        "integrated": { "$ref": "#/$defs/integratedArray" },
+        "feed_in": { "$ref": "#/$defs/feedInArray" },
         "overrides": {
           "type": "array",
           "items": { "$ref": "#/$defs/override" }
