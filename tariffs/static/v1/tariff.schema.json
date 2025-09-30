@@ -8,6 +8,7 @@
   "properties": {
     "name": { "type": "string", "minLength": 1 },
     "description": { "type": "string" },
+
     "meta": {
       "type": "object",
       "additionalProperties": false,
@@ -19,6 +20,7 @@
         }
       }
     },
+
     "electricity_origin": {
       "type": "object",
       "additionalProperties": false,
@@ -47,14 +49,17 @@
         }
       }
     },
+
     "prices": {
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/$defs/pricePeriod" }
     }
   },
+
   "$defs": {
     "hhmm": { "type": "string", "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$" },
+
     "workItem": {
       "type": "object",
       "additionalProperties": false,
@@ -65,6 +70,7 @@
         "value": { "type": "number", "minimum": 0 }
       }
     },
+
     "powerItem": {
       "type": "object",
       "additionalProperties": false,
@@ -78,6 +84,7 @@
         "value": { "type": "number", "minimum": 0 }
       }
     },
+
     "baseItem": {
       "type": "object",
       "additionalProperties": false,
@@ -89,54 +96,48 @@
           "pattern": "^CHF\\/(?:y|m|w|d|12h|6h|4h|2h|h|30min|15min)$"
         },
         "value": { "type": "number", "minimum": 0 },
-        "mode": { "enum": ["fixed", "min_charge"] },
-        "prorate": { "type": "boolean" }
+        "mode": { "enum": ["fixed", "min_charge"] }
       }
     },
+
+    "chargeItem": {
+      "oneOf": [
+        { "$ref": "#/$defs/workItem" },
+        { "$ref": "#/$defs/powerItem" },
+        { "$ref": "#/$defs/baseItem" }
+      ]
+    },
+
     "electricityArray": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/workItem" }
+      "items": { "$ref": "#/$defs/chargeItem" }
     },
+
     "gridArray": {
       "type": "array",
       "minItems": 1,
-      "items": {
-        "oneOf": [
-          { "$ref": "#/$defs/workItem" },
-          { "$ref": "#/$defs/powerItem" },
-          { "$ref": "#/$defs/baseItem" }
-        ]
-      }
+      "items": { "$ref": "#/$defs/chargeItem" }
     },
+
     "dsoArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/chargeItem" }
+    },
+
+    "integratedArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/chargeItem" }
+    },
+
+    "feedInArray": {
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/$defs/workItem" }
     },
-    "integratedArray": {
-      "type": "array",
-      "items": {
-        "oneOf": [
-          { "$ref": "#/$defs/workItem" },
-          {
-            "allOf": [
-              { "$ref": "#/$defs/baseItem" },
-              {
-                "type": "object",
-                "properties": {
-                  "mode": { "enum": ["fixed", "min_charge"] }
-                }
-              }
-            ]
-          }
-        ]
-      }
-    },
-    "feedInArray": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/workItem" }
-    },
+
     "override": {
       "type": "object",
       "additionalProperties": false,
@@ -175,6 +176,7 @@
         }
       }
     },
+
     "pricePeriod": {
       "type": "object",
       "additionalProperties": false,
@@ -187,17 +189,14 @@
       ],
       "properties": {
         "start_timestamp": { "type": "string", "format": "date-time" },
-        "end_timestamp": {
-          "type": "string",
-          "format": "date-time",
-          "formatMinimum": { "$data": "1/start_timestamp" },
-          "not": { "const": { "$data": "1/start_timestamp" } }
-        },
+        "end_timestamp":   { "type": "string", "format": "date-time" },
+
         "electricity": { "$ref": "#/$defs/electricityArray" },
         "grid":        { "$ref": "#/$defs/gridArray" },
         "dso":         { "$ref": "#/$defs/dsoArray" },
         "integrated":  { "$ref": "#/$defs/integratedArray" },
         "feed_in":     { "$ref": "#/$defs/feedInArray" },
+
         "overrides": {
           "type": "array",
           "items": { "$ref": "#/$defs/override" }
