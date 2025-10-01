@@ -12,6 +12,10 @@ on:
         description: "Expected tariff name to enforce (e.g. 'emn-50')"
         required: true
         type: string
+      tariff_year:
+        description: "Expected tariff file name to enforce (e.g. '2025')"
+        required: true
+        type: string
 
 jobs:
   validate:
@@ -41,7 +45,7 @@ jobs:
           ajv validate
           -c ajv-formats
           -s _tariff.schema.json
-          -d data/tariffs/${{ inputs.tariff_name }}/tariff.json
+          -d data/tariffs/${{ inputs.tariff_name }}/${{ inputs.tariff_year }}.json
           --spec=draft2020
           --strict=true
           --data
