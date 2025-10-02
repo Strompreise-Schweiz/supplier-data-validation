@@ -73,7 +73,7 @@ jobs:
       - name: Download tariff schema
         run: |
           curl -fsSL \
-            https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/tariffs/static/${{ inputs.tariff_schema_version }}/${{ inputs.tariff_year }}.schema.json \
+            https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/tariffs/static/${{ inputs.tariff_schema_version }}/tariff.schema.json \
             -o _tariff.schema.json
 
       # 6) Validate tariff.json (strict mode)
