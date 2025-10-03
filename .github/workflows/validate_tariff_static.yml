@@ -81,11 +81,13 @@ jobs:
 
       # 3) Additional linting: Check if 1 year and no gap
       - name: "Lint: continuous yearly coverage (no gaps/overlaps)"
-        shell: node
+        shell: bash
         env:
           TARIFF_PATH: ${{ env.TARIFF_PATH }}
           TARIFF_YEAR: ${{ inputs.tariff_year }}
         run: |
+          set -euo pipefail
+          node - <<'NODE'
           const fs = require('fs');
 
           function parseISO(s) {
@@ -147,3 +149,4 @@ jobs:
           }
 
           console.log("OK: continuous, no overlaps, exactly one calendar year.");
+          NODE
