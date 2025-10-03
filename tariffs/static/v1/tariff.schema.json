@@ -12,12 +12,18 @@
 
     "meta": {
       "type": "object",
-      "additionalProperties": true,
+      "additionalProperties": false,
+      "required": ["timezone", "vat_rate_percent"],
       "properties": {
         "timezone": {
-          "type": "string",
-          "description": "IANA timezone (used to resolve quarters/years)",
-          "pattern": "^[A-Za-z]+(?:/[A-Za-z_+-]+)+$"
+          "const": "Europe/Zurich",
+          "description": "All timestamps are in Swiss local time (CET/CEST)."
+        },
+        "vat_rate_percent": {
+          "type": "number",
+          "description": "Swiss VAT rate in percent, applied to all net prices (all values are stored without VAT).",
+          "minimum": 0,
+          "maximum": 25
         }
       }
     },
@@ -121,6 +127,12 @@
       "items": { "$ref": "#/$defs/chargeItem" }
     },
 
+    "meteringArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/baseItem" }
+    },
+
     "dsoArray": {
       "type": "array",
       "minItems": 1,
@@ -137,6 +149,12 @@
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/$defs/workItem" }
+    },
+
+    "regionalFeesArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/regionalFeeItem" }
     },
 
     "override": {
@@ -185,6 +203,7 @@
         "end_timestamp",
         "electricity",
         "grid",
+        "metering",
         "dso"
       ],
       "properties": {
@@ -193,6 +212,7 @@
 
         "electricity": { "$ref": "#/$defs/electricityArray" },
         "grid":        { "$ref": "#/$defs/gridArray" },
+        "metering":   { "$ref": "#/$defs/meteringArray" },
         "dso":         { "$ref": "#/$defs/dsoArray" },
         "integrated":  { "$ref": "#/$defs/integratedArray" },
         "feed_in":     { "$ref": "#/$defs/feedInArray" },
