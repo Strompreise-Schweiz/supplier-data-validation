@@ -291,7 +291,7 @@
         "type": "'regional_fees' must be an array.",
         "minItems": "'regional_fees' requires at least one item."
       },
-      "items": { "$ref": "#/$defs/regionalFeeItem" }
+      "items": { "$ref": "#/$defs/chargeItem" }
     },
 
     "override": {
@@ -351,64 +351,63 @@
             "^(electricity|grid|dso|integrated)\\.(work|power)$": { "type": "number" }
           }
         }
-      },
-
-      "pricePeriod": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "start_timestamp",
-          "end_timestamp",
-          "electricity",
-          "grid",
-          "metering",
-          "dso"
-        ],
-        "errorMessage": {
-          "type": "Each price period must be an object.",
-          "required": {
-            "start_timestamp": "Missing 'start_timestamp' (ISO 8601).",
-            "end_timestamp": "Missing 'end_timestamp' (ISO 8601).",
-            "electricity": "Missing 'electricity' block.",
-            "grid": "Missing 'grid' block.",
-            "metering": "Missing 'metering' block (monthly metering fee).",
-            "dso": "Missing 'dso' block."
-          },
-          "additionalProperties": "Unknown field in a price period."
+      }
+    },
+    "pricePeriod": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start_timestamp",
+        "end_timestamp",
+        "electricity",
+        "grid",
+        "metering",
+        "dso"
+      ],
+      "errorMessage": {
+        "type": "Each price period must be an object.",
+        "required": {
+          "start_timestamp": "Missing 'start_timestamp' (ISO 8601).",
+          "end_timestamp": "Missing 'end_timestamp' (ISO 8601).",
+          "electricity": "Missing 'electricity' block.",
+          "grid": "Missing 'grid' block.",
+          "metering": "Missing 'metering' block (monthly metering fee).",
+          "dso": "Missing 'dso' block."
         },
-        "properties": {
-          "start_timestamp": {
-            "type": "string","format": "date-time",
-            "errorMessage": {
-              "type": "'start_timestamp' must be a string.",
-              "format": "'start_timestamp' must be a valid ISO 8601 date-time."
-            }
-          },
-          "end_timestamp": {
-            "type": "string","format": "date-time",
-            "errorMessage": {
-              "type": "'end_timestamp' must be a string.",
-              "format": "'end_timestamp' must be a valid ISO 8601 date-time."
-            }
-          },
+        "additionalProperties": "Unknown field in a price period."
+      },
+      "properties": {
+        "start_timestamp": {
+          "type": "string","format": "date-time",
+          "errorMessage": {
+            "type": "'start_timestamp' must be a string.",
+            "format": "'start_timestamp' must be a valid ISO 8601 date-time."
+          }
+        },
+        "end_timestamp": {
+          "type": "string","format": "date-time",
+          "errorMessage": {
+            "type": "'end_timestamp' must be a string.",
+            "format": "'end_timestamp' must be a valid ISO 8601 date-time."
+          }
+        },
 
-          "electricity": { "$ref": "#/$defs/electricityArray" },
-          "grid":        { "$ref": "#/$defs/gridArray" },
-          "metering":    { "$ref": "#/$defs/meteringArray" },
-          "dso":         { "$ref": "#/$defs/dsoArray" },
-          "integrated":  { "$ref": "#/$defs/integratedArray",
-            "errorMessage": { "type": "'integrated' must be an array if present." }
-          },
-          "feed_in":     { "$ref": "#/$defs/feedInArray",
-            "errorMessage": { "type": "'feed_in' must be an array if present." }
-          },
+        "electricity": { "$ref": "#/$defs/electricityArray" },
+        "grid":        { "$ref": "#/$defs/gridArray" },
+        "metering":    { "$ref": "#/$defs/meteringArray" },
+        "dso":         { "$ref": "#/$defs/dsoArray" },
+        "integrated":  { "$ref": "#/$defs/integratedArray",
+          "errorMessage": { "type": "'integrated' must be an array if present." }
+        },
+        "feed_in":     { "$ref": "#/$defs/feedInArray",
+          "errorMessage": { "type": "'feed_in' must be an array if present." }
+        },
 
-          "overrides": {
-            "type": "array",
-            "items": { "$ref": "#/$defs/override" },
-            "errorMessage": {
-              "type": "'overrides' must be an array."
-            }
+        "overrides": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/override" },
+          "errorMessage": {
+            "type": "'overrides' must be an array."
           }
         }
       }
