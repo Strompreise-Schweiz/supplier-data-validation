@@ -30,7 +30,7 @@ jobs:
           node-version: '20'
 
       - name: Install ajv + formats
-        run: npm i -g ajv-cli@5 ajv-formats
+        run: npm i -g ajv-cli@5 ajv-formats ajv-formats-draft2019
 
       # 1) Check inputs & path
       - name: Validate inputs
@@ -73,9 +73,78 @@ jobs:
           set -euo pipefail
           ajv validate \
             -c ajv-formats \
+            -c ajv-formats-draft2019 \
             -s _tariff.schema.json \
             -d "${TARIFF_PATH}" \
             --spec=draft2020 \
             --strict=true \
             --data
 
+      # 3) Additional linting: Check if 1 year and no gap
+      - name: "Lint: continuous yearly coverage (no gaps/overlaps)"
+        shell: node
+        env:
+          TARIFF_PATH: ${{ env.TARIFF_PATH }}
+          TARIFF_YEAR: ${{ inputs.tariff_year }}
+        run: |
+          const fs = require('fs');
+
+          function parseISO(s) {
+            const t = Date.parse(s);
+            if (Number.isNaN(t)) throw new Error(`Invalid ISO timestamp: ${s}`);
+            return t;
+          }
+
+          const path = process.env.TARIFF_PATH;
+          const yearStr = process.env.TARIFF_YEAR;
+          if (!/^\d{4}$/.test(yearStr)) throw new Error(`Invalid TARIFF_YEAR: ${yearStr}`);
+          const YEAR = Number(yearStr);
+
+          const raw = fs.readFileSync(path, 'utf8');
+          const json = JSON.parse(raw);
+          const prices = json.prices || [];
+          if (!Array.isArray(prices) || prices.length === 0) {
+            throw new Error("prices must be a non-empty array");
+          }
+
+          const periods = prices.map((p, i) => {
+            if (!p.start_timestamp || !p.end_timestamp) {
+              throw new Error(`prices[${i}] missing start_timestamp or end_timestamp`);
+            }
+            const startMs = parseISO(p.start_timestamp);
+            const endMs = parseISO(p.end_timestamp);
+            if (!(endMs > startMs)) {
+              throw new Error(`prices[${i}] has end <= start (${p.start_timestamp} .. ${p.end_timestamp})`);
+            }
+            return { i, startMs, endMs, start: p.start_timestamp, end: p.end_timestamp };
+          }).sort((a,b) => a.startMs - b.startMs);
+
+          for (let i = 1; i < periods.length; i++) {
+            const prev = periods[i-1];
+            const curr = periods[i];
+            if (curr.startMs < prev.endMs) {
+              throw new Error(`Overlap: period ${curr.i} starts ${curr.start} before previous end ${prev.end}`);
+            }
+            if (curr.startMs !== prev.endMs) {
+              throw new Error(`Gap: period ${curr.i} starts ${curr.start} but previous ended ${prev.end}`);
+            }
+          }
+
+          // Exact calendar year coverage (Start Jan 1, End Jan 1 of the following year)
+          const expectedStartStr = `${YEAR}-01-01T00:00:00+01:00`;
+          const expectedEndStr   = `${YEAR+1}-01-01T00:00:00+01:00`;
+          const expectedStart = parseISO(expectedStartStr);
+          const expectedEnd   = parseISO(expectedEndStr);
+
+          const actualStart = periods[0].startMs;
+          const actualEnd   = periods[periods.length - 1].endMs;
+
+          if (actualStart !== expectedStart || actualEnd !== expectedEnd) {
+            const iso = (ms) => new Date(ms).toISOString();
+            throw new Error(
+              `Coverage must be exactly ${expectedStartStr} .. ${expectedEndStr} ` +
+              `(got ${iso(actualStart)} .. ${iso(actualEnd)})`
+            );
+          }
+
+          console.log("OK: continuous, no overlaps, exactly one calendar year.");
