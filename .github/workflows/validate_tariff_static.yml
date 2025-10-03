@@ -30,7 +30,7 @@ jobs:
           node-version: '20'
 
       - name: Install ajv + formats
-        run: npm i -g ajv-cli@5 ajv-formats ajv-errors@3.0.0
+        run: npm i -g ajv-cli@5 ajv-formats@3 ajv-errors@3
 
       # 1) Check inputs & path
       - name: Validate inputs
@@ -67,19 +67,36 @@ jobs:
             "https://raw.githubusercontent.com/Strompreise-Schweiz/supplier-data-validation/main/tariffs/static/${{ inputs.tariff_schema_version }}/tariff.schema.json" \
             -o _tariff.schema.json
 
-      - name: Validate tariff.json with AJV (draft 2020-12, strict, $data)
+      - name: Validate tariff.json (Ajv with friendly messages)
         shell: bash
         run: |
           set -euo pipefail
-          ajv validate \
-            -c ajv-formats \
-            -c ajv-errors \
-            --all-errors \
-            --spec=draft2020 \
-            --strict=true \
-            --data \
-            -s _tariff.schema.json \
-            -d "${TARIFF_PATH}"
+          node - <<'NODE'
+          const fs = require('fs');
+          const Ajv = require('ajv').default;
+          const addFormats = require('ajv-formats').default;
+          const ajvErrors = require('ajv-errors');
+
+          const schema = JSON.parse(fs.readFileSync('_tariff.schema.json','utf8'));
+          const data   = JSON.parse(fs.readFileSync(process.env.TARIFF_PATH,'utf8'));
+
+          const ajv = new Ajv({
+            strict: true,
+            allErrors: true,
+          });
+          addFormats(ajv);
+          ajvErrors(ajv);
+
+          const validate = ajv.compile(schema);
+          const ok = validate(data);
+          if (!ok) {
+            const toPath = (p) => p || '(root)';
+            const lines = validate.errors.map(e => `${toPath(e.instancePath)}: ${e.message}`);
+            console.error(lines.join('\n'));
+            process.exit(1);
+          }
+          console.log('AJV schema validation passed with friendly messages.');
+          NODE
 
       # 3) Additional linting: Check if 1 year and no gap
       - name: "Lint: continuous yearly coverage (no gaps/overlaps)"
