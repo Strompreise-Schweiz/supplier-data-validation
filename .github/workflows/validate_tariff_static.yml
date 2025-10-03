@@ -30,7 +30,7 @@ jobs:
           node-version: '20'
 
       - name: Install ajv + formats
-        run: npm i -g ajv-cli@5 ajv-formats@3 ajv-errors@3
+        run: npm i ajv@8 ajv-formats@3 ajv-errors@3
 
       # 1) Check inputs & path
       - name: Validate inputs
