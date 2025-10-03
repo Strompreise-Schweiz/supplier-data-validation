@@ -74,11 +74,12 @@ jobs:
           ajv validate \
             -c ajv-formats \
             -c ajv-errors \
-            -s _tariff.schema.json \
-            -d "${TARIFF_PATH}" \
+            --all-errors \
             --spec=draft2020 \
             --strict=true \
             --data
+            -s _tariff.schema.json \
+            -d "${TARIFF_PATH}" \
 
       # 3) Additional linting: Check if 1 year and no gap
       - name: "Lint: continuous yearly coverage (no gaps/overlaps)"
