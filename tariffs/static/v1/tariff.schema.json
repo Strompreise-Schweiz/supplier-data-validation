@@ -192,8 +192,7 @@
         "end_timestamp": {
           "type": "string",
           "format": "date-time",
-          "formatMinimum": { "$data": "1/start_timestamp" },
-          "not": { "const": { "$data": "1/start_timestamp" } }
+          "formatExclusiveMinimum": { "$data": "1/start_timestamp" }
         },
 
         "electricity": { "$ref": "#/$defs/electricityArray" },
