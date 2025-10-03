@@ -77,9 +77,9 @@ jobs:
             --all-errors \
             --spec=draft2020 \
             --strict=true \
-            --data
+            --data \
             -s _tariff.schema.json \
-            -d "${TARIFF_PATH}" \
+            -d "${TARIFF_PATH}"
 
       # 3) Additional linting: Check if 1 year and no gap
       - name: "Lint: continuous yearly coverage (no gaps/overlaps)"
