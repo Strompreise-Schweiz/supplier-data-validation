@@ -5,6 +5,14 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["name", "prices"],
+  "errorMessage": {
+    "type": "Top-level JSON must be an object.",
+    "required": {
+      "name": "Missing 'name': provide a non-empty tariff name.",
+      "prices": "Missing 'prices': provide at least one price period."
+    },
+    "additionalProperties": "Unknown field at top level."
+  },
   "properties": {
     "$schema": { "type": "string", "format": "uri" },
     "name": { "type": "string", "minLength": 1 },
@@ -14,16 +22,32 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["timezone", "vat_rate_percent"],
+      "errorMessage": {
+        "type": "'meta' must be an object.",
+        "required": {
+          "timezone": "Missing 'meta.timezone': must be 'Europe/Zurich'.",
+          "vat_rate_percent": "Missing 'meta.vat_rate_percent': provide the VAT rate in percent (net prices only)."
+        },
+        "additionalProperties": "Unknown field in 'meta'."
+      },
       "properties": {
         "timezone": {
           "const": "Europe/Zurich",
-          "description": "All timestamps are in Swiss local time (CET/CEST)."
+          "description": "All timestamps are in Swiss local time (CET/CEST).",
+          "errorMessage": {
+            "const": "'meta.timezone' must be exactly 'Europe/Zurich'."
+          }
         },
         "vat_rate_percent": {
           "type": "number",
-          "description": "Swiss VAT rate in percent, applied to all net prices (all values are stored without VAT).",
           "minimum": 0,
-          "maximum": 25
+          "maximum": 25,
+          "description": "Swiss VAT rate in percent, applied to all net prices (all values are stored without VAT).",
+          "errorMessage": {
+            "type": "'meta.vat_rate_percent' must be a number.",
+            "minimum": "'meta.vat_rate_percent' cannot be negative.",
+            "maximum": "'meta.vat_rate_percent' seems too high (max 25%)."
+          }
         }
       }
     },
@@ -32,25 +56,58 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["metric", "by_year"],
+      "errorMessage": {
+        "type": "'electricity_origin' must be an object.",
+        "required": {
+          "metric": "Missing 'electricity_origin.metric' (expected 'renewable_share_percent').",
+          "by_year": "Missing 'electricity_origin.by_year' (per-year values required)."
+        },
+        "additionalProperties": "Unknown field in 'electricity_origin'."
+      },
       "properties": {
-        "definition": { "enum": ["CH_Stromkennzeichnung"] },
-        "metric": { "const": "renewable_share_percent" },
-        "unit": { "const": "percent" },
-        "default_share_percent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "definition": {
+          "enum": ["CH_Stromkennzeichnung"],
+          "errorMessage": {
+            "enum": "'electricity_origin.definition' must be 'CH_Stromkennzeichnung'."
+          }
+        },
+        "metric": {
+          "const": "renewable_share_percent",
+          "errorMessage": {
+            "const": "'electricity_origin.metric' must be 'renewable_share_percent'."
+          }
+        },
+        "unit": {
+          "const": "percent",
+          "errorMessage": { "const": "'electricity_origin.unit' must be 'percent'." }
+        },
+        "default_share_percent": {
+          "type": "number","minimum": 0,"maximum": 100,
+          "errorMessage": {
+            "type": "'electricity_origin.default_share_percent' must be a number.",
+            "minimum": "Default renewable share cannot be negative.",
+            "maximum": "Default renewable share cannot exceed 100."
+          }
+        },
         "by_year": {
           "type": "object",
           "additionalProperties": false,
+          "errorMessage": {
+            "type": "'electricity_origin.by_year' must be an object keyed by year.",
+            "additionalProperties": "Only year keys like '2025' are allowed."
+          },
           "patternProperties": {
             "^(19|20|21)\\d{2}$": {
               "oneOf": [
-                { "type": "number", "minimum": 0, "maximum": 100 },
+                { "type": "number","minimum": 0,"maximum": 100 },
                 {
-                  "type": "array",
-                  "minItems": 4,
-                  "maxItems": 4,
-                  "items": { "type": "number", "minimum": 0, "maximum": 100 }
+                  "type": "array","minItems": 4,"maxItems": 4,
+                  "items": { "type": "number","minimum": 0,"maximum": 100 }
                 }
-              ]
+              ],
+              "errorMessage": {
+                "oneOf": "For each year: provide a single percent (0–100) or an array of 4 quarterly percents (each 0–100)."
+              }
             }
           }
         }
@@ -60,21 +117,46 @@
     "prices": {
       "type": "array",
       "minItems": 1,
+      "errorMessage": {
+        "type": "'prices' must be an array.",
+        "minItems": "'prices' must contain at least one period."
+      },
       "items": { "$ref": "#/$defs/pricePeriod" }
     }
   },
 
   "$defs": {
-    "hhmm": { "type": "string", "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$" },
+    "hhmm": {
+      "type": "string",
+      "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+      "errorMessage": {
+        "type": "Time must be a string.",
+        "pattern": "Time must be in HH:MM (00:00–23:59)."
+      }
+    },
 
     "workItem": {
       "type": "object",
       "additionalProperties": false,
       "required": ["component", "unit", "value"],
+      "errorMessage": {
+        "type": "Charge item must be an object.",
+        "required": {
+          "component": "Missing 'component' (expected 'work').",
+          "unit": "Missing 'unit' (expected 'CHF/kWh').",
+          "value": "Missing 'value' (numeric)."
+        },
+        "additionalProperties": "Unknown field in a charge item."
+      },
       "properties": {
-        "component": { "const": "work" },
-        "unit": { "const": "CHF/kWh" },
-        "value": { "type": "number", "minimum": 0 }
+        "component": { "const": "work", "errorMessage": { "const": "'component' must be 'work'." } },
+        "unit": { "const": "CHF/kWh", "errorMessage": { "const": "'unit' must be 'CHF/kWh'." } },
+        "value": { "type": "number","minimum": 0,
+          "errorMessage": {
+            "type": "'value' must be a number.",
+            "minimum": "'value' cannot be negative."
+          }
+        }
       }
     },
 
@@ -82,13 +164,28 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["component", "unit", "value"],
+      "errorMessage": {
+        "type": "Charge item must be an object.",
+        "required": {
+          "component": "Missing 'component' (expected 'power').",
+          "unit": "Missing 'unit' (e.g., CHF/kW/m).",
+          "value": "Missing 'value' (numeric)."
+        },
+        "additionalProperties": "Unknown field in a charge item."
+      },
       "properties": {
-        "component": { "const": "power" },
+        "component": { "const": "power", "errorMessage": { "const": "'component' must be 'power'." } },
         "unit": {
           "type": "string",
-          "pattern": "^CHF\\/kW\\/(?:y|m|w|d|12h|6h|4h|2h|h|30min|15min)$"
+          "pattern": "^CHF\\/kW\\/(?:y|m|w|d|12h|6h|4h|2h|h|30min|15min)$",
+          "errorMessage": {
+            "type": "'unit' must be a string.",
+            "pattern": "Invalid 'unit' for power item (expected CHF/kW/<period>)."
+          }
         },
-        "value": { "type": "number", "minimum": 0 }
+        "value": { "type": "number","minimum": 0,
+          "errorMessage": { "type": "'value' must be a number.", "minimum": "'value' cannot be negative." }
+        }
       }
     },
 
@@ -96,14 +193,33 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["component", "unit", "value", "mode"],
+      "errorMessage": {
+        "type": "Charge item must be an object.",
+        "required": {
+          "component": "Missing 'component' (expected 'base').",
+          "unit": "Missing 'unit' (e.g., CHF/m).",
+          "value": "Missing 'value' (numeric).",
+          "mode": "Missing 'mode' ('fixed' or 'min_charge')."
+        },
+        "additionalProperties": "Unknown field in a charge item."
+      },
       "properties": {
-        "component": { "const": "base" },
+        "component": { "const": "base", "errorMessage": { "const": "'component' must be 'base'." } },
         "unit": {
           "type": "string",
-          "pattern": "^CHF\\/(?:y|m|w|d|12h|6h|4h|2h|h|30min|15min)$"
+          "pattern": "^CHF\\/(?:y|m|w|d|12h|6h|4h|2h|h|30min|15min)$",
+          "errorMessage": {
+            "type": "'unit' must be a string.",
+            "pattern": "Invalid 'unit' for base item (expected CHF/<period>, e.g., CHF/m)."
+          }
         },
-        "value": { "type": "number", "minimum": 0 },
-        "mode": { "enum": ["fixed", "min_charge"] }
+        "value": { "type": "number","minimum": 0,
+          "errorMessage": { "type": "'value' must be a number.", "minimum": "'value' cannot be negative." }
+        },
+        "mode": {
+          "enum": ["fixed", "min_charge"],
+          "errorMessage": { "enum": "'mode' must be either 'fixed' or 'min_charge'." }
+        }
       }
     },
 
@@ -116,44 +232,65 @@
     },
 
     "electricityArray": {
-      "type": "array",
-      "minItems": 1,
+      "type": "array","minItems": 1,
+      "errorMessage": {
+        "type": "'electricity' must be an array.",
+        "minItems": "'electricity' requires at least one item."
+      },
       "items": { "$ref": "#/$defs/chargeItem" }
     },
 
     "gridArray": {
-      "type": "array",
-      "minItems": 1,
+      "type": "array","minItems": 1,
+      "errorMessage": {
+        "type": "'grid' must be an array.",
+        "minItems": "'grid' requires at least one item."
+      },
       "items": { "$ref": "#/$defs/chargeItem" }
     },
 
     "meteringArray": {
-      "type": "array",
-      "minItems": 1,
+      "type": "array","minItems": 1,
+      "errorMessage": {
+        "type": "'metering' must be an array.",
+        "minItems": "'metering' requires at least one item."
+      },
       "items": { "$ref": "#/$defs/baseItem" }
     },
 
     "dsoArray": {
-      "type": "array",
-      "minItems": 1,
+      "type": "array","minItems": 1,
+      "errorMessage": {
+        "type": "'dso' must be an array.",
+        "minItems": "'dso' requires at least one item."
+      },
       "items": { "$ref": "#/$defs/chargeItem" }
     },
 
     "integratedArray": {
-      "type": "array",
-      "minItems": 1,
+      "type": "array","minItems": 1,
+      "errorMessage": {
+        "type": "'integrated' must be an array.",
+        "minItems": "'integrated' requires at least one item."
+      },
       "items": { "$ref": "#/$defs/chargeItem" }
     },
 
     "feedInArray": {
-      "type": "array",
-      "minItems": 1,
+      "type": "array","minItems": 1,
+      "errorMessage": {
+        "type": "'feed_in' must be an array.",
+        "minItems": "'feed_in' requires at least one item."
+      },
       "items": { "$ref": "#/$defs/workItem" }
     },
 
     "regionalFeesArray": {
-      "type": "array",
-      "minItems": 1,
+      "type": "array","minItems": 1,
+      "errorMessage": {
+        "type": "'regional_fees' must be an array.",
+        "minItems": "'regional_fees' requires at least one item."
+      },
       "items": { "$ref": "#/$defs/regionalFeeItem" }
     },
 
@@ -161,65 +298,118 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["weekdays", "intervals", "set"],
+      "errorMessage": {
+        "type": "Each override must be an object.",
+        "required": {
+          "weekdays": "Missing 'weekdays' in override.",
+          "intervals": "Missing 'intervals' in override.",
+          "set": "Missing 'set' in override."
+        },
+        "additionalProperties": "Unknown field in an override."
+      },
       "properties": {
-        "name": { "type": "string" },
+        "name": { "type": "string", "errorMessage": { "type": "'name' must be a string." } },
         "weekdays": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "type": "integer", "minimum": 1, "maximum": 7 }
+          "type": "array","minItems": 1,"uniqueItems": true,
+          "items": { "type": "integer","minimum": 1,"maximum": 7 },
+          "errorMessage": {
+            "type": "'weekdays' must be an array of integers (1=Mon … 7=Sun).",
+            "minItems": "'weekdays' must contain at least one day.",
+            "uniqueItems": "'weekdays' must not contain duplicates.",
+            "items": "Each weekday must be an integer between 1 and 7."
+          }
         },
         "intervals": {
-          "type": "array",
-          "minItems": 1,
+          "type": "array","minItems": 1,
+          "errorMessage": {
+            "type": "'intervals' must be an array.",
+            "minItems": "'intervals' must contain at least one time range."
+          },
           "items": {
             "type": "object",
             "additionalProperties": false,
             "required": ["from", "to"],
+            "errorMessage": {
+              "type": "Each interval must be an object.",
+              "required": { "from": "Missing 'from' time.", "to": "Missing 'to' time." },
+              "additionalProperties": "Unknown field in an interval."
+            },
             "properties": {
               "from": { "$ref": "#/$defs/hhmm" },
-              "to": { "$ref": "#/$defs/hhmm" }
+              "to":   { "$ref": "#/$defs/hhmm" }
             }
           }
         },
         "set": {
-          "type": "object",
-          "minProperties": 1,
-          "additionalProperties": false,
+          "type": "object","minProperties": 1,"additionalProperties": false,
+          "errorMessage": {
+            "type": "'set' must be an object.",
+            "minProperties": "'set' must contain at least one price override.",
+            "additionalProperties": "Unknown field in 'set'."
+          },
           "patternProperties": {
-            "^(electricity|grid|dso|integrated)\\.(work|power|base)$": {
-              "type": "number"
-            }
+            "^(electricity|grid|dso|integrated)\\.(work|power)$": { "type": "number" }
           }
         }
-      }
-    },
+      },
 
-    "pricePeriod": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "start_timestamp",
-        "end_timestamp",
-        "electricity",
-        "grid",
-        "metering",
-        "dso"
-      ],
-      "properties": {
-        "start_timestamp": { "type": "string", "format": "date-time" },
-        "end_timestamp":   { "type": "string", "format": "date-time" },
+      "pricePeriod": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "start_timestamp",
+          "end_timestamp",
+          "electricity",
+          "grid",
+          "metering",
+          "dso"
+        ],
+        "errorMessage": {
+          "type": "Each price period must be an object.",
+          "required": {
+            "start_timestamp": "Missing 'start_timestamp' (ISO 8601).",
+            "end_timestamp": "Missing 'end_timestamp' (ISO 8601).",
+            "electricity": "Missing 'electricity' block.",
+            "grid": "Missing 'grid' block.",
+            "metering": "Missing 'metering' block (monthly metering fee).",
+            "dso": "Missing 'dso' block."
+          },
+          "additionalProperties": "Unknown field in a price period."
+        },
+        "properties": {
+          "start_timestamp": {
+            "type": "string","format": "date-time",
+            "errorMessage": {
+              "type": "'start_timestamp' must be a string.",
+              "format": "'start_timestamp' must be a valid ISO 8601 date-time."
+            }
+          },
+          "end_timestamp": {
+            "type": "string","format": "date-time",
+            "errorMessage": {
+              "type": "'end_timestamp' must be a string.",
+              "format": "'end_timestamp' must be a valid ISO 8601 date-time."
+            }
+          },
 
-        "electricity": { "$ref": "#/$defs/electricityArray" },
-        "grid":        { "$ref": "#/$defs/gridArray" },
-        "metering":   { "$ref": "#/$defs/meteringArray" },
-        "dso":         { "$ref": "#/$defs/dsoArray" },
-        "integrated":  { "$ref": "#/$defs/integratedArray" },
-        "feed_in":     { "$ref": "#/$defs/feedInArray" },
+          "electricity": { "$ref": "#/$defs/electricityArray" },
+          "grid":        { "$ref": "#/$defs/gridArray" },
+          "metering":    { "$ref": "#/$defs/meteringArray" },
+          "dso":         { "$ref": "#/$defs/dsoArray" },
+          "integrated":  { "$ref": "#/$defs/integratedArray",
+            "errorMessage": { "type": "'integrated' must be an array if present." }
+          },
+          "feed_in":     { "$ref": "#/$defs/feedInArray",
+            "errorMessage": { "type": "'feed_in' must be an array if present." }
+          },
 
-        "overrides": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/override" }
+          "overrides": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/override" },
+            "errorMessage": {
+              "type": "'overrides' must be an array."
+            }
+          }
         }
       }
     }
