@@ -189,11 +189,7 @@
       ],
       "properties": {
         "start_timestamp": { "type": "string", "format": "date-time" },
-        "end_timestamp": {
-          "type": "string",
-          "format": "date-time",
-          "formatExclusiveMinimum": { "$data": "1/start_timestamp" }
-        },
+        "end_timestamp":   { "type": "string", "format": "date-time" },
 
         "electricity": { "$ref": "#/$defs/electricityArray" },
         "grid":        { "$ref": "#/$defs/gridArray" },

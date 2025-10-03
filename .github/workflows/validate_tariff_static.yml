@@ -30,7 +30,7 @@ jobs:
           node-version: '20'
 
       - name: Install ajv + formats
-        run: npm i -g ajv-cli@5 ajv-formats ajv-formats-draft2019
+        run: npm i -g ajv-cli@5 ajv-formats
 
       # 1) Check inputs & path
       - name: Validate inputs
@@ -73,7 +73,6 @@ jobs:
           set -euo pipefail
           ajv validate \
             -c ajv-formats \
-            -c ajv-formats-draft2019 \
             -s _tariff.schema.json \
             -d "${TARIFF_PATH}" \
             --spec=draft2020 \
