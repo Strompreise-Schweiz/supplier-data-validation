@@ -160,6 +160,41 @@
       }
     },
 
+    "reactiveEnergyItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "unit", "value"],
+      "errorMessage": {
+        "type": "Charge item must be an object.",
+        "required": {
+          "component": "Missing 'component' (expected 'reactive_energy').",
+          "unit": "Missing 'unit' (must be 'CHF/kvarh').",
+          "value": "Missing 'value' (numeric)."
+        },
+        "additionalProperties": "Unknown field in a charge item."
+      },
+      "properties": {
+        "component": {
+          "const": "reactive_energy",
+          "errorMessage": { "const": "'component' must be 'reactive_energy'." }
+        },
+        "unit": {
+          "const": "CHF/kvarh",
+          "errorMessage": {
+            "const": "Invalid 'unit' for reactive energy: must be exactly 'CHF/kvarh'."
+          }
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "errorMessage": {
+            "type": "'value' must be a number.",
+            "minimum": "'value' cannot be negative."
+          }
+        }
+      }
+    },
+
     "powerItem": {
       "type": "object",
       "additionalProperties": false,
@@ -197,24 +232,30 @@
         "type": "Charge item must be an object.",
         "required": {
           "component": "Missing 'component' (expected 'base').",
-          "unit": "Missing 'unit' (e.g., CHF/m).",
+          "unit": "Missing 'unit' (must be 'CHF/m').",
           "value": "Missing 'value' (numeric).",
           "mode": "Missing 'mode' ('fixed' or 'min_charge')."
         },
         "additionalProperties": "Unknown field in a charge item."
       },
       "properties": {
-        "component": { "const": "base", "errorMessage": { "const": "'component' must be 'base'." } },
+        "component": {
+          "const": "base",
+          "errorMessage": { "const": "'component' must be 'base'." }
+        },
         "unit": {
-          "type": "string",
-          "pattern": "^CHF\\/(?:y|m|w|d|12h|6h|4h|2h|h|30min|15min)$",
+          "const": "CHF/m",
           "errorMessage": {
-            "type": "'unit' must be a string.",
-            "pattern": "Invalid 'unit' for base item (expected CHF/<period>, e.g., CHF/m)."
+            "const": "Invalid 'unit' for base item: must be exactly 'CHF/m'."
           }
         },
-        "value": { "type": "number","minimum": 0,
-          "errorMessage": { "type": "'value' must be a number.", "minimum": "'value' cannot be negative." }
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "errorMessage": {
+            "type": "'value' must be a number.",
+            "minimum": "'value' cannot be negative."
+          }
         },
         "mode": {
           "enum": ["fixed", "min_charge"],
@@ -226,6 +267,7 @@
     "chargeItem": {
       "oneOf": [
         { "$ref": "#/$defs/workItem" },
+        { "$ref": "#/$defs/reactiveEnergyItem" },
         { "$ref": "#/$defs/powerItem" },
         { "$ref": "#/$defs/baseItem" }
       ]
@@ -291,7 +333,12 @@
         "type": "'regional_fees' must be an array.",
         "minItems": "'regional_fees' requires at least one item."
       },
-      "items": { "$ref": "#/$defs/chargeItem" }
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/workItem" },
+          { "$ref": "#/$defs/baseItem" }
+        ]
+      }
     },
 
     "override": {
@@ -351,14 +398,17 @@
           }
         },
         "set": {
-          "type": "object","minProperties": 1,"additionalProperties": false,
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
           "errorMessage": {
             "type": "'set' must be an object.",
             "minProperties": "'set' must contain at least one price override.",
             "additionalProperties": "Unknown field in 'set'."
           },
           "patternProperties": {
-            "^(electricity|grid|dso|integrated)\\.(work|power)$": { "type": "number" }
+            "^(electricity|grid|dso|integrated)\\.(work|power|reactive_energy)$": { "type": "number" },
+            "^(feed_in|regional_fees)\\.(work)$": { "type": "number" }
           }
         }
       }
@@ -408,6 +458,10 @@
         "dso":         { "$ref": "#/$defs/dsoArray" },
         "integrated":  { "$ref": "#/$defs/integratedArray",
           "errorMessage": { "type": "'integrated' must be an array if present." }
+        },
+        "regional_fees": { 
+          "$ref": "#/$defs/regionalFeesArray",
+          "errorMessage": { "type": "'regional_fees' must be an array if present." }
         },
         "feed_in":     { "$ref": "#/$defs/feedInArray",
           "errorMessage": { "type": "'feed_in' must be an array if present." }
