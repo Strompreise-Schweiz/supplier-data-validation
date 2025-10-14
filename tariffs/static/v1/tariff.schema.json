@@ -48,6 +48,17 @@
             "minimum": "'meta.vat_rate_percent' cannot be negative.",
             "maximum": "'meta.vat_rate_percent' seems too high (max 25%)."
           }
+        },
+        "info_url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://",
+          "description": "Public URL to a PDF or website with more tariff information.",
+          "errorMessage": {
+            "type": "'meta.info_url' must be a string (URL).",
+            "format": "'meta.info_url' must be a valid URL (e.g. starting with https://).",
+            "pattern": "'meta.info_url' must start with 'http://' or 'https://'."
+          }
         }
       }
     },
@@ -55,20 +66,21 @@
     "electricity_origin": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["metric", "by_year"],
+      "required": ["definition", "metric", "by_quarter"],
       "errorMessage": {
         "type": "'electricity_origin' must be an object.",
         "required": {
+          "definition": "Missing 'electricity_origin.definition' (expected 'CH_Stromkennzeichnung').",
           "metric": "Missing 'electricity_origin.metric' (expected 'renewable_share_percent').",
-          "by_year": "Missing 'electricity_origin.by_year' (per-year values required)."
+          "by_quarter": "Missing 'electricity_origin.by_quarter' (provide four quarterly values, Q1–Q4)."
         },
         "additionalProperties": "Unknown field in 'electricity_origin'."
       },
       "properties": {
         "definition": {
-          "enum": ["CH_Stromkennzeichnung"],
+          "const": "CH_Stromkennzeichnung",
           "errorMessage": {
-            "enum": "'electricity_origin.definition' must be 'CH_Stromkennzeichnung'."
+            "const": "'electricity_origin.definition' must be 'CH_Stromkennzeichnung'."
           }
         },
         "metric": {
@@ -77,38 +89,24 @@
             "const": "'electricity_origin.metric' must be 'renewable_share_percent'."
           }
         },
-        "unit": {
-          "const": "percent",
-          "errorMessage": { "const": "'electricity_origin.unit' must be 'percent'." }
-        },
-        "default_share_percent": {
-          "type": "number","minimum": 0,"maximum": 100,
-          "errorMessage": {
-            "type": "'electricity_origin.default_share_percent' must be a number.",
-            "minimum": "Default renewable share cannot be negative.",
-            "maximum": "Default renewable share cannot exceed 100."
-          }
-        },
-        "by_year": {
-          "type": "object",
-          "additionalProperties": false,
-          "errorMessage": {
-            "type": "'electricity_origin.by_year' must be an object keyed by year.",
-            "additionalProperties": "Only year keys like '2025' are allowed."
-          },
-          "patternProperties": {
-            "^(19|20|21)\\d{2}$": {
-              "oneOf": [
-                { "type": "number","minimum": 0,"maximum": 100 },
-                {
-                  "type": "array","minItems": 4,"maxItems": 4,
-                  "items": { "type": "number","minimum": 0,"maximum": 100 }
-                }
-              ],
-              "errorMessage": {
-                "oneOf": "For each year: provide a single percent (0–100) or an array of 4 quarterly percents (each 0–100)."
-              }
+        "by_quarter": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "errorMessage": {
+              "type": "Each quarterly value must be a number.",
+              "minimum": "Quarterly values cannot be negative.",
+              "maximum": "Quarterly values cannot exceed 100."
             }
+          },
+          "errorMessage": {
+            "type": "'electricity_origin.by_quarter' must be an array with four numbers (Q1–Q4).",
+            "minItems": "'electricity_origin.by_quarter' must have exactly 4 items (got too few).",
+            "maxItems": "'electricity_origin.by_quarter' must have exactly 4 items (got too many)."
           }
         }
       }
