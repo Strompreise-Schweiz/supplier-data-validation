@@ -102,7 +102,7 @@ jobs:
           NODE
 
       # 2) Top-level year bounds + monthly coverage (exactly 1..12, no overlaps)"
-      - name: "Lint: top-level year bounds + monthly coverage"
+      - name: "Lint: strict valid_from/valid_to (ISO tz) + monthly coverage"
         shell: bash
         env:
           TARIFF_PATH: ${{ env.TARIFF_PATH }}
@@ -121,39 +121,37 @@ jobs:
           const json = JSON.parse(raw);
 
           // ---------- Helpers ----------
-          const isISODate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s);
-          const isISODateTime = (s) => /^\d{4}-\d{2}-\d{2}T/.test(s);
-          const extractYMD = (s) => {
-            if (typeof s !== 'string') throw new Error(`Date must be a string, got ${typeof s}`);
-            // Accept both "YYYY-MM-DD" and full ISO datetime; slice the date part
-            const m = s.slice(0, 10);
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(m)) {
-              throw new Error(`Invalid date or datetime format: "${s}" (expected YYYY-MM-DD or ISO 8601 datetime)`);
-            }
-            const [y, mo, d] = m.split('-').map(Number);
-            return { y, mo, d, raw: s, datePart: m };
-          };
+          const ISO_TZ = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/;
+
+          function requireField(obj, key) {
+            if (!(key in obj)) throw new Error(`Missing '${key}' at top level`);
+            const val = obj[key];
+            if (typeof val !== 'string') throw new Error(`'${key}' must be a string (got ${typeof val})`);
+            if (!ISO_TZ.test(val)) throw new Error(`'${key}' must match YYYY-MM-DDTHH:MM:SS+HH:MM (e.g., 2025-01-01T00:00:00+01:00), got '${val}'`);
+            return val;
+          }
+
+          function ymd(s) {
+            // assumes format is valid per ISO_TZ
+            return s.slice(0, 10); // YYYY-MM-DD
+          }
+
+          function yearOf(s) { return Number(s.slice(0, 4)); }
 
           // ---------- 1) Check top-level valid_from / valid_to ----------
-          if (!('valid_from' in json)) throw new Error("Missing 'valid_from' at top level");
-          if (!('valid_to' in json)) throw new Error("Missing 'valid_to' at top level");
-
-          const vf = extractYMD(json.valid_from);
-          const vt = extractYMD(json.valid_to);
+          const vf = requireField(json, 'valid_from');
+          const vt = requireField(json, 'valid_to');
 
           // Year must match input year
-          if (vf.y !== YEAR) throw new Error(`'valid_from' year must be ${YEAR} (got ${vf.y})`);
-          if (vt.y !== YEAR) throw new Error(`'valid_to' year must be ${YEAR} (got ${vt.y})`);
+          if (yearOf(vf) !== YEAR) throw new Error(`'valid_from' year must be ${YEAR} (got ${yearOf(vf)})`);
+          if (yearOf(vt) !== YEAR) throw new Error(`'valid_to' year must be ${YEAR} (got ${yearOf(vt)})`);
 
-          // Must be Jan 1 .. Dec 31 of that year (date part check, time/tz allowed)
-          const mustStart = `${YEAR}-01-01`;
-          const mustEnd   = `${YEAR}-12-31`;
-          if (vf.datePart !== mustStart) {
-            throw new Error(`'valid_from' must be ${mustStart} (got ${vf.raw})`);
-          }
-          if (vt.datePart !== mustEnd) {
-            throw new Error(`'valid_to' must be ${mustEnd} (got ${vt.raw})`);
-          }
+          // Exact bounds in Europe/Zurich (offset +01:00)
+          const mustStart = `${YEAR}-01-01T00:00:00+01:00`;
+          const mustEnd   = `${YEAR}-12-31T23:59:59+01:00`;
+
+          if (vf !== mustStart) throw new Error(`'valid_from' must be exactly ${mustStart} (got ${vf})`);
+          if (vt !== mustEnd)   throw new Error(`'valid_to' must be exactly ${mustEnd} (got ${vt})`);
 
           // ---------- 2) Monthly coverage checks ----------
           const prices = json.prices || [];
@@ -183,6 +181,6 @@ jobs:
             throw new Error(`Monthly coverage incomplete: missing months ${missing.join(', ')}`);
           }
 
-          console.log("OK: valid_from/valid_to match calendar year bounds, and months cover exactly 1..12 with no overlaps.");
+          console.log("OK: strict valid_from/valid_to with timezone, and months cover exactly 1..12 with no overlaps.");
           NODE
 

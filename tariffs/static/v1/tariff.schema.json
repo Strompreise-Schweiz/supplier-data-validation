@@ -20,24 +20,24 @@
 
     "valid_from": {
       "type": "string",
-      "description": "First calendar date (local) this tariff is valid from (inclusive). Can be either a plain date (YYYY-MM-DD) or a full ISO 8601 date-time with timezone (e.g., 2025-01-01T00:00:00+01:00).",
+      "description": "First instant (Europe/Zurich) this tariff is valid from (inclusive). Must be ISO 8601 date-time with timezone, e.g., 2025-01-01T00:00:00+01:00.",
       "format": "date-time",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T\\d{2}:\\d{2}:\\d{2}(?:Z|[+-]\\d{2}:\\d{2})|)$",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$",
       "errorMessage": {
         "type": "'valid_from' must be a string.",
-        "format": "'valid_from' must be a valid ISO 8601 date or date-time.",
-        "pattern": "'valid_from' must match YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS+HH:MM (e.g. 2025-01-01 or 2025-01-01T00:00:00+01:00)."
+        "format": "'valid_from' must be an ISO 8601 date-time with timezone.",
+        "pattern": "'valid_from' must match YYYY-MM-DDTHH:MM:SS+HH:MM (e.g., 2025-01-01T00:00:00+01:00)."
       }
     },
     "valid_to": {
       "type": "string",
-      "description": "Last calendar date (local) this tariff is valid until (inclusive). Can be either a plain date (YYYY-MM-DD) or a full ISO 8601 date-time with timezone (e.g., 2025-12-31T23:59:59+01:00).",
+      "description": "Last instant (Europe/Zurich) this tariff is valid until (inclusive). Must be ISO 8601 date-time with timezone, e.g., 2025-12-31T23:59:59+01:00.",
       "format": "date-time",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T\\d{2}:\\d{2}:\\d{2}(?:Z|[+-]\\d{2}:\\d{2})|)$",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$",
       "errorMessage": {
         "type": "'valid_to' must be a string.",
-        "format": "'valid_to' must be a valid ISO 8601 date or date-time.",
-        "pattern": "'valid_to' must match YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS+HH:MM (e.g. 2025-12-31 or 2025-12-31T23:59:59+01:00)."
+        "format": "'valid_to' must be an ISO 8601 date-time with timezone.",
+        "pattern": "'valid_to' must match YYYY-MM-DDTHH:MM:SS+HH:MM (e.g., 2025-12-31T23:59:59+01:00)."
       }
     },
 
