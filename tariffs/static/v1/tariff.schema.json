@@ -473,12 +473,20 @@
         },
         "months": {
           "type": "array",
-          "items": { "type": "integer", "minimum": 1, "maximum": 12 },
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12,
+            "errorMessage": {
+              "type": "Each 'months' entry must be an integer.",
+              "minimum": "Each 'months' entry must be between 1 and 12.",
+              "maximum": "Each 'months' entry must be between 1 and 12."
+            }
+          },
           "uniqueItems": true,
           "minItems": 1,
           "errorMessage": {
             "type": "'months' must be an array of integers (1..12).",
-            "items": "Each 'months' entry must be an integer between 1 and 12.",
             "uniqueItems": "'months' must not contain duplicates.",
             "minItems": "'months' must contain at least one month if present."
           }
@@ -502,10 +510,10 @@
         },
 
         "electricity": { "$ref": "#/$defs/electricityArray" },
-        "grid": { "$ref": "#/$defs/gridArray" },
-        "metering": { "$ref": "#/$defs/meteringArray" },
-        "dso": { "$ref": "#/$defs/dsoArray" },
-        "integrated": {
+        "grid":        { "$ref": "#/$defs/gridArray" },
+        "metering":    { "$ref": "#/$defs/meteringArray" },
+        "dso":         { "$ref": "#/$defs/dsoArray" },
+        "integrated":  {
           "$ref": "#/$defs/integratedArray",
           "errorMessage": { "type": "'integrated' must be an array if present." }
         },
@@ -513,7 +521,7 @@
           "$ref": "#/$defs/regionalFeesArray",
           "errorMessage": { "type": "'regional_fees' must be an array if present." }
         },
-        "feed_in": {
+        "feed_in":     {
           "$ref": "#/$defs/feedInArray",
           "errorMessage": { "type": "'feed_in' must be an array if present." }
         },
