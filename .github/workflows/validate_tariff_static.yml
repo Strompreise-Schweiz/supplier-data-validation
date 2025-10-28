@@ -101,8 +101,8 @@ jobs:
           console.log('AJV schema validation passed with friendly messages.');
           NODE
 
-      # 3) Additional linting: exact 1-year coverage, no gaps/overlaps, all months covered
-      - name: "Lint: continuous yearly coverage (no gaps/overlaps) + monthly coverage"
+      # 2) Top-level year bounds + monthly coverage (exactly 1..12, no overlaps)"
+      - name: "Lint: top-level year bounds + monthly coverage"
         shell: bash
         env:
           TARIFF_PATH: ${{ env.TARIFF_PATH }}
@@ -112,41 +112,6 @@ jobs:
           node - <<'NODE'
           const fs = require('fs');
 
-          function parseISO(s) {
-            const t = Date.parse(s);
-            if (Number.isNaN(t)) throw new Error(`Invalid ISO timestamp: ${s}`);
-            return t;
-          }
-
-          // Iterate all (year, month) pairs touched by [startMs, endMs)
-          function* iterMonthsInRange(startMs, endMs) {
-            const start = new Date(startMs);
-            const end = new Date(endMs);
-
-            let y = start.getUTCFullYear();
-            let m = start.getUTCMonth(); // 0..11
-            // Normalize to the first day of the start month (UTC)
-            let cursor = new Date(Date.UTC(y, m, 1, 0, 0, 0, 0));
-
-            // If the normalized cursor is after the actual start, step back one month
-            if (cursor.getTime() > startMs) {
-              m -= 1;
-              if (m < 0) { m = 11; y -= 1; }
-              cursor = new Date(Date.UTC(y, m, 1, 0, 0, 0, 0));
-            }
-
-            while (cursor.getTime() < endMs) {
-              const monthStart = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), 1));
-              const monthEnd   = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1));
-              // Check overlap with [startMs, endMs)
-              const overlap = Math.max(0, Math.min(monthEnd.getTime(), endMs) - Math.max(monthStart.getTime(), startMs));
-              if (overlap > 0) {
-                yield { y: cursor.getUTCFullYear(), m: cursor.getUTCMonth() + 1 }; // 1..12
-              }
-              cursor = monthEnd;
-            }
-          }
-
           const path = process.env.TARIFF_PATH;
           const yearStr = process.env.TARIFF_YEAR;
           if (!/^\d{4}$/.test(yearStr)) throw new Error(`Invalid TARIFF_YEAR: ${yearStr}`);
@@ -154,79 +119,70 @@ jobs:
 
           const raw = fs.readFileSync(path, 'utf8');
           const json = JSON.parse(raw);
+
+          // ---------- Helpers ----------
+          const isISODate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+          const isISODateTime = (s) => /^\d{4}-\d{2}-\d{2}T/.test(s);
+          const extractYMD = (s) => {
+            if (typeof s !== 'string') throw new Error(`Date must be a string, got ${typeof s}`);
+            // Accept both "YYYY-MM-DD" and full ISO datetime; slice the date part
+            const m = s.slice(0, 10);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(m)) {
+              throw new Error(`Invalid date or datetime format: "${s}" (expected YYYY-MM-DD or ISO 8601 datetime)`);
+            }
+            const [y, mo, d] = m.split('-').map(Number);
+            return { y, mo, d, raw: s, datePart: m };
+          };
+
+          // ---------- 1) Check top-level valid_from / valid_to ----------
+          if (!('valid_from' in json)) throw new Error("Missing 'valid_from' at top level");
+          if (!('valid_to' in json)) throw new Error("Missing 'valid_to' at top level");
+
+          const vf = extractYMD(json.valid_from);
+          const vt = extractYMD(json.valid_to);
+
+          // Year must match input year
+          if (vf.y !== YEAR) throw new Error(`'valid_from' year must be ${YEAR} (got ${vf.y})`);
+          if (vt.y !== YEAR) throw new Error(`'valid_to' year must be ${YEAR} (got ${vt.y})`);
+
+          // Must be Jan 1 .. Dec 31 of that year (date part check, time/tz allowed)
+          const mustStart = `${YEAR}-01-01`;
+          const mustEnd   = `${YEAR}-12-31`;
+          if (vf.datePart !== mustStart) {
+            throw new Error(`'valid_from' must be ${mustStart} (got ${vf.raw})`);
+          }
+          if (vt.datePart !== mustEnd) {
+            throw new Error(`'valid_to' must be ${mustEnd} (got ${vt.raw})`);
+          }
+
+          // ---------- 2) Monthly coverage checks ----------
           const prices = json.prices || [];
           if (!Array.isArray(prices) || prices.length === 0) {
-            throw new Error("prices must be a non-empty array");
+            throw new Error("'prices' must be a non-empty array");
           }
 
-          const periods = prices.map((p, i) => {
-            if (!p.start_timestamp || !p.end_timestamp) {
-              throw new Error(`prices[${i}] missing start_timestamp or end_timestamp`);
-            }
-            const startMs = parseISO(p.start_timestamp);
-            const endMs = parseISO(p.end_timestamp);
-            if (!(endMs > startMs)) {
-              throw new Error(`prices[${i}] has end <= start (${p.start_timestamp} .. ${p.end_timestamp})`);
-            }
-            return { i, startMs, endMs, start: p.start_timestamp, end: p.end_timestamp, months: p.months };
-          }).sort((a,b) => a.startMs - b.startMs);
-
-          // Check for gaps/overlaps
-          for (let i = 1; i < periods.length; i++) {
-            const prev = periods[i-1];
-            const curr = periods[i];
-            if (curr.startMs < prev.endMs) {
-              throw new Error(`Overlap: period ${curr.i} starts ${curr.start} before previous end ${prev.end}`);
-            }
-            if (curr.startMs !== prev.endMs) {
-              throw new Error(`Gap: period ${curr.i} starts ${curr.start} but previous ended ${prev.end}`);
-            }
-          }
-
-          // Exact calendar-year coverage: [YEAR-01-01T00:00+01:00 .. (YEAR+1)-01-01T00:00+01:00)
-          const expectedStartStr = `${YEAR}-01-01T00:00:00+01:00`;
-          const expectedEndStr   = `${YEAR+1}-01-01T00:00:00+01:00`;
-          const expectedStart = parseISO(expectedStartStr);
-          const expectedEnd   = parseISO(expectedEndStr);
-
-          const actualStart = periods[0].startMs;
-          const actualEnd   = periods[periods.length - 1].endMs;
-
-          if (actualStart !== expectedStart || actualEnd !== expectedEnd) {
-            const iso = (ms) => new Date(ms).toISOString();
-            throw new Error(
-              `Coverage must be exactly ${expectedStartStr} .. ${expectedEndStr} `
-              + `(got ${iso(actualStart)} .. ${iso(actualEnd)})`
-            );
-          }
-
-          // Month coverage: ensure months 1..12 are covered based on timestamps
           const covered = new Set();
-          for (const p of periods) {
-            for (const { m } of iterMonthsInRange(p.startMs, p.endMs)) {
-              covered.add(m);
+          prices.forEach((p, i) => {
+            if (!Array.isArray(p.months) || p.months.length === 0) {
+              throw new Error(`prices[${i}] missing or empty 'months' array`);
             }
-          }
+            p.months.forEach((m) => {
+              if (!Number.isInteger(m) || m < 1 || m > 12) {
+                throw new Error(`prices[${i}] has invalid month '${m}' (must be 1..12)`);
+              }
+              if (covered.has(m)) {
+                throw new Error(`Overlap: month ${m} appears in multiple periods (conflict at prices[${i}])`);
+              }
+              covered.add(m);
+            });
+          });
+
           const missing = [];
           for (let m = 1; m <= 12; m++) if (!covered.has(m)) missing.push(m);
           if (missing.length) {
             throw new Error(`Monthly coverage incomplete: missing months ${missing.join(', ')}`);
           }
 
-          // Optional: if a period declares a 'months' array, validate it matches the derived months
-          periods.forEach(p => {
-            if (Array.isArray(p.months) && p.months.length > 0) {
-              const fromTs = p.startMs, toTs = p.endMs;
-              const derived = new Set();
-              for (const { m } of iterMonthsInRange(fromTs, toTs)) derived.add(m);
-              const declared = new Set(p.months);
-              const a = [...derived].sort((x,y)=>x-y).join(',');
-              const b = [...declared].sort((x,y)=>x-y).join(',');
-              if (a !== b) {
-                throw new Error(`prices[${p.i}] months mismatch: declared [${b}] vs derived from timestamps [${a}]`);
-              }
-            }
-          });
-
-          console.log("OK: continuous, no overlaps, exactly one calendar year, all 12 months covered.");
+          console.log("OK: valid_from/valid_to match calendar year bounds, and months cover exactly 1..12 with no overlaps.");
           NODE
+

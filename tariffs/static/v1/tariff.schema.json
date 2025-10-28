@@ -20,20 +20,24 @@
 
     "valid_from": {
       "type": "string",
-      "format": "date",
-      "description": "First calendar date (local) this tariff is valid from (inclusive).",
+      "description": "First calendar date (local) this tariff is valid from (inclusive). Can be either a plain date (YYYY-MM-DD) or a full ISO 8601 date-time with timezone (e.g., 2025-01-01T00:00:00+01:00).",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T\\d{2}:\\d{2}:\\d{2}(?:Z|[+-]\\d{2}:\\d{2})|)$",
       "errorMessage": {
         "type": "'valid_from' must be a string.",
-        "format": "'valid_from' must be a date in YYYY-MM-DD."
+        "format": "'valid_from' must be a valid ISO 8601 date or date-time.",
+        "pattern": "'valid_from' must match YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS+HH:MM (e.g. 2025-01-01 or 2025-01-01T00:00:00+01:00)."
       }
     },
     "valid_to": {
       "type": "string",
-      "format": "date",
-      "description": "Last calendar date (local) this tariff is valid until (inclusive).",
+      "description": "Last calendar date (local) this tariff is valid until (inclusive). Can be either a plain date (YYYY-MM-DD) or a full ISO 8601 date-time with timezone (e.g., 2025-12-31T23:59:59+01:00).",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T\\d{2}:\\d{2}:\\d{2}(?:Z|[+-]\\d{2}:\\d{2})|)$",
       "errorMessage": {
         "type": "'valid_to' must be a string.",
-        "format": "'valid_to' must be a date in YYYY-MM-DD."
+        "format": "'valid_to' must be a valid ISO 8601 date or date-time.",
+        "pattern": "'valid_to' must match YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS+HH:MM (e.g. 2025-12-31 or 2025-12-31T23:59:59+01:00)."
       }
     },
 
@@ -447,8 +451,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "start_timestamp",
-        "end_timestamp",
+        "months",
         "electricity",
         "grid",
         "metering",
@@ -457,8 +460,7 @@
       "errorMessage": {
         "type": "Each price period must be an object.",
         "required": {
-          "start_timestamp": "Missing 'start_timestamp' (ISO 8601).",
-          "end_timestamp": "Missing 'end_timestamp' (ISO 8601).",
+          "months": "Missing 'months' (array of integers 1..12).",
           "electricity": "Missing 'electricity' block.",
           "grid": "Missing 'grid' block.",
           "metering": "Missing 'metering' block (monthly metering fee).",
@@ -488,24 +490,7 @@
           "errorMessage": {
             "type": "'months' must be an array of integers (1..12).",
             "uniqueItems": "'months' must not contain duplicates.",
-            "minItems": "'months' must contain at least one month if present."
-          }
-        },
-
-        "start_timestamp": {
-          "type": "string",
-          "format": "date-time",
-          "errorMessage": {
-            "type": "'start_timestamp' must be a string.",
-            "format": "'start_timestamp' must be a valid ISO 8601 date-time."
-          }
-        },
-        "end_timestamp": {
-          "type": "string",
-          "format": "date-time",
-          "errorMessage": {
-            "type": "'end_timestamp' must be a string.",
-            "format": "'end_timestamp' must be a valid ISO 8601 date-time."
+            "minItems": "'months' must contain at least one month."
           }
         },
 
