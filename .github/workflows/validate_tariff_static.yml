@@ -4,16 +4,16 @@ on:
   workflow_call:
     inputs:
       tariff_schema_version:
-        description: "Tariff schema version to validate against (e.g. v1, v2)"
+        description: "Tariff schema version to validate against (e.g., v1, v2)"
         required: true
         default: "v1"
         type: string
       tariff_name:
-        description: "Folder name of the tariff (e.g. 'emn-050')"
+        description: "Folder name of the tariff (e.g., 'emn-050')"
         required: true
         type: string
       tariff_year:
-        description: "Tariff file name (4-digit year, e.g. '2025')"
+        description: "Tariff file name (4-digit year, e.g., '2025')"
         required: true
         type: string
 
@@ -74,7 +74,7 @@ jobs:
           node - <<'NODE'
           const fs = require('fs');
 
-          // >>> Wichtig: Ajv 2020 verwenden
+          // Use Ajv 2020 draft
           const Ajv = require('ajv/dist/2020').default;
           const addFormats = require('ajv-formats').default;
           const ajvErrors = require('ajv-errors');
@@ -84,10 +84,10 @@ jobs:
 
           const ajv = new Ajv({
             strict: true,
-            allErrors: true,   // erforderlich für ajv-errors
+            allErrors: true,   // required for ajv-errors to show all messages
           });
           addFormats(ajv);
-          ajvErrors(ajv);      // aktiviert "errorMessage" im Schema
+          ajvErrors(ajv);      // enables "errorMessage" in the schema
 
           const validate = ajv.compile(schema);
           const ok = validate(data);
@@ -101,8 +101,8 @@ jobs:
           console.log('AJV schema validation passed with friendly messages.');
           NODE
 
-      # 3) Additional linting: Check if 1 year and no gap
-      - name: "Lint: continuous yearly coverage (no gaps/overlaps)"
+      # 3) Additional linting: exact 1-year coverage, no gaps/overlaps, all months covered
+      - name: "Lint: continuous yearly coverage (no gaps/overlaps) + monthly coverage"
         shell: bash
         env:
           TARIFF_PATH: ${{ env.TARIFF_PATH }}
@@ -116,6 +116,35 @@ jobs:
             const t = Date.parse(s);
             if (Number.isNaN(t)) throw new Error(`Invalid ISO timestamp: ${s}`);
             return t;
+          }
+
+          // Iterate all (year, month) pairs touched by [startMs, endMs)
+          function* iterMonthsInRange(startMs, endMs) {
+            const start = new Date(startMs);
+            const end = new Date(endMs);
+
+            let y = start.getUTCFullYear();
+            let m = start.getUTCMonth(); // 0..11
+            // Normalize to the first day of the start month (UTC)
+            let cursor = new Date(Date.UTC(y, m, 1, 0, 0, 0, 0));
+
+            // If the normalized cursor is after the actual start, step back one month
+            if (cursor.getTime() > startMs) {
+              m -= 1;
+              if (m < 0) { m = 11; y -= 1; }
+              cursor = new Date(Date.UTC(y, m, 1, 0, 0, 0, 0));
+            }
+
+            while (cursor.getTime() < endMs) {
+              const monthStart = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), 1));
+              const monthEnd   = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1));
+              // Check overlap with [startMs, endMs)
+              const overlap = Math.max(0, Math.min(monthEnd.getTime(), endMs) - Math.max(monthStart.getTime(), startMs));
+              if (overlap > 0) {
+                yield { y: cursor.getUTCFullYear(), m: cursor.getUTCMonth() + 1 }; // 1..12
+              }
+              cursor = monthEnd;
+            }
           }
 
           const path = process.env.TARIFF_PATH;
@@ -139,9 +168,10 @@ jobs:
             if (!(endMs > startMs)) {
               throw new Error(`prices[${i}] has end <= start (${p.start_timestamp} .. ${p.end_timestamp})`);
             }
-            return { i, startMs, endMs, start: p.start_timestamp, end: p.end_timestamp };
+            return { i, startMs, endMs, start: p.start_timestamp, end: p.end_timestamp, months: p.months };
           }).sort((a,b) => a.startMs - b.startMs);
 
+          // Check for gaps/overlaps
           for (let i = 1; i < periods.length; i++) {
             const prev = periods[i-1];
             const curr = periods[i];
@@ -153,7 +183,7 @@ jobs:
             }
           }
 
-          // Exact calendar year coverage (Start Jan 1, End Jan 1 of the following year)
+          // Exact calendar-year coverage: [YEAR-01-01T00:00+01:00 .. (YEAR+1)-01-01T00:00+01:00)
           const expectedStartStr = `${YEAR}-01-01T00:00:00+01:00`;
           const expectedEndStr   = `${YEAR+1}-01-01T00:00:00+01:00`;
           const expectedStart = parseISO(expectedStartStr);
@@ -165,10 +195,38 @@ jobs:
           if (actualStart !== expectedStart || actualEnd !== expectedEnd) {
             const iso = (ms) => new Date(ms).toISOString();
             throw new Error(
-              `Coverage must be exactly ${expectedStartStr} .. ${expectedEndStr} ` +
-              `(got ${iso(actualStart)} .. ${iso(actualEnd)})`
+              `Coverage must be exactly ${expectedStartStr} .. ${expectedEndStr} `
+              + `(got ${iso(actualStart)} .. ${iso(actualEnd)})`
             );
           }
 
-          console.log("OK: continuous, no overlaps, exactly one calendar year.");
+          // Month coverage: ensure months 1..12 are covered based on timestamps
+          const covered = new Set();
+          for (const p of periods) {
+            for (const { m } of iterMonthsInRange(p.startMs, p.endMs)) {
+              covered.add(m);
+            }
+          }
+          const missing = [];
+          for (let m = 1; m <= 12; m++) if (!covered.has(m)) missing.push(m);
+          if (missing.length) {
+            throw new Error(`Monthly coverage incomplete: missing months ${missing.join(', ')}`);
+          }
+
+          // Optional: if a period declares a 'months' array, validate it matches the derived months
+          periods.forEach(p => {
+            if (Array.isArray(p.months) && p.months.length > 0) {
+              const fromTs = p.startMs, toTs = p.endMs;
+              const derived = new Set();
+              for (const { m } of iterMonthsInRange(fromTs, toTs)) derived.add(m);
+              const declared = new Set(p.months);
+              const a = [...derived].sort((x,y)=>x-y).join(',');
+              const b = [...declared].sort((x,y)=>x-y).join(',');
+              if (a !== b) {
+                throw new Error(`prices[${p.i}] months mismatch: declared [${b}] vs derived from timestamps [${a}]`);
+              }
+            }
+          });
+
+          console.log("OK: continuous, no overlaps, exactly one calendar year, all 12 months covered.");
           NODE

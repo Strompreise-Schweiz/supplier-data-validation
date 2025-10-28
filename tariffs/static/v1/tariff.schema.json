@@ -18,6 +18,25 @@
     "name": { "type": "string", "minLength": 1 },
     "description": { "type": "string" },
 
+    "valid_from": {
+      "type": "string",
+      "format": "date",
+      "description": "First calendar date (local) this tariff is valid from (inclusive).",
+      "errorMessage": {
+        "type": "'valid_from' must be a string.",
+        "format": "'valid_from' must be a date in YYYY-MM-DD."
+      }
+    },
+    "valid_to": {
+      "type": "string",
+      "format": "date",
+      "description": "Last calendar date (local) this tariff is valid until (inclusive).",
+      "errorMessage": {
+        "type": "'valid_to' must be a string.",
+        "format": "'valid_to' must be a date in YYYY-MM-DD."
+      }
+    },
+
     "meta": {
       "type": "object",
       "additionalProperties": false,
@@ -149,7 +168,9 @@
       "properties": {
         "component": { "const": "work", "errorMessage": { "const": "'component' must be 'work'." } },
         "unit": { "const": "CHF/kWh", "errorMessage": { "const": "'unit' must be 'CHF/kWh'." } },
-        "value": { "type": "number","minimum": 0,
+        "value": {
+          "type": "number",
+          "minimum": 0,
           "errorMessage": {
             "type": "'value' must be a number.",
             "minimum": "'value' cannot be negative."
@@ -216,7 +237,9 @@
             "pattern": "Invalid 'unit' for power item (expected CHF/kW/<period>)."
           }
         },
-        "value": { "type": "number","minimum": 0,
+        "value": {
+          "type": "number",
+          "minimum": 0,
           "errorMessage": { "type": "'value' must be a number.", "minimum": "'value' cannot be negative." }
         }
       }
@@ -272,7 +295,8 @@
     },
 
     "electricityArray": {
-      "type": "array","minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "errorMessage": {
         "type": "'electricity' must be an array.",
         "minItems": "'electricity' requires at least one item."
@@ -281,7 +305,8 @@
     },
 
     "gridArray": {
-      "type": "array","minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "errorMessage": {
         "type": "'grid' must be an array.",
         "minItems": "'grid' requires at least one item."
@@ -290,7 +315,8 @@
     },
 
     "meteringArray": {
-      "type": "array","minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "errorMessage": {
         "type": "'metering' must be an array.",
         "minItems": "'metering' requires at least one item."
@@ -299,7 +325,8 @@
     },
 
     "dsoArray": {
-      "type": "array","minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "errorMessage": {
         "type": "'dso' must be an array.",
         "minItems": "'dso' requires at least one item."
@@ -308,7 +335,8 @@
     },
 
     "integratedArray": {
-      "type": "array","minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "errorMessage": {
         "type": "'integrated' must be an array.",
         "minItems": "'integrated' requires at least one item."
@@ -317,7 +345,8 @@
     },
 
     "feedInArray": {
-      "type": "array","minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "errorMessage": {
         "type": "'feed_in' must be an array.",
         "minItems": "'feed_in' requires at least one item."
@@ -326,7 +355,8 @@
     },
 
     "regionalFeesArray": {
-      "type": "array","minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "errorMessage": {
         "type": "'regional_fees' must be an array.",
         "minItems": "'regional_fees' requires at least one item."
@@ -375,7 +405,8 @@
           }
         },
         "intervals": {
-          "type": "array","minItems": 1,
+          "type": "array",
+          "minItems": 1,
           "errorMessage": {
             "type": "'intervals' must be an array.",
             "minItems": "'intervals' must contain at least one time range."
@@ -391,7 +422,7 @@
             },
             "properties": {
               "from": { "$ref": "#/$defs/hhmm" },
-              "to":   { "$ref": "#/$defs/hhmm" }
+              "to": { "$ref": "#/$defs/hhmm" }
             }
           }
         },
@@ -411,6 +442,7 @@
         }
       }
     },
+
     "pricePeriod": {
       "type": "object",
       "additionalProperties": false,
@@ -435,15 +467,34 @@
         "additionalProperties": "Unknown field in a price period."
       },
       "properties": {
+        "name": {
+          "type": "string",
+          "errorMessage": { "type": "'name' must be a string." }
+        },
+        "months": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1, "maximum": 12 },
+          "uniqueItems": true,
+          "minItems": 1,
+          "errorMessage": {
+            "type": "'months' must be an array of integers (1..12).",
+            "items": "Each 'months' entry must be an integer between 1 and 12.",
+            "uniqueItems": "'months' must not contain duplicates.",
+            "minItems": "'months' must contain at least one month if present."
+          }
+        },
+
         "start_timestamp": {
-          "type": "string","format": "date-time",
+          "type": "string",
+          "format": "date-time",
           "errorMessage": {
             "type": "'start_timestamp' must be a string.",
             "format": "'start_timestamp' must be a valid ISO 8601 date-time."
           }
         },
         "end_timestamp": {
-          "type": "string","format": "date-time",
+          "type": "string",
+          "format": "date-time",
           "errorMessage": {
             "type": "'end_timestamp' must be a string.",
             "format": "'end_timestamp' must be a valid ISO 8601 date-time."
@@ -451,17 +502,19 @@
         },
 
         "electricity": { "$ref": "#/$defs/electricityArray" },
-        "grid":        { "$ref": "#/$defs/gridArray" },
-        "metering":    { "$ref": "#/$defs/meteringArray" },
-        "dso":         { "$ref": "#/$defs/dsoArray" },
-        "integrated":  { "$ref": "#/$defs/integratedArray",
+        "grid": { "$ref": "#/$defs/gridArray" },
+        "metering": { "$ref": "#/$defs/meteringArray" },
+        "dso": { "$ref": "#/$defs/dsoArray" },
+        "integrated": {
+          "$ref": "#/$defs/integratedArray",
           "errorMessage": { "type": "'integrated' must be an array if present." }
         },
-        "regional_fees": { 
+        "regional_fees": {
           "$ref": "#/$defs/regionalFeesArray",
           "errorMessage": { "type": "'regional_fees' must be an array if present." }
         },
-        "feed_in":     { "$ref": "#/$defs/feedInArray",
+        "feed_in": {
+          "$ref": "#/$defs/feedInArray",
           "errorMessage": { "type": "'feed_in' must be an array if present." }
         },
 
