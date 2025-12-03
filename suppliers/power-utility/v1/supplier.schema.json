@@ -103,7 +103,7 @@
               "description": { "type": "string" },
               "path": {
                 "type": "string",
-                "format": "uri",
+                "format": "uri-template",
                 "description": "Pfad/URL mit optionalem Platzhalter {year}, z.B. .../{year}.json"
               },
               "years": {
