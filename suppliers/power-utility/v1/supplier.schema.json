@@ -7,6 +7,7 @@
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string", "format": "uri" },
+
     "name": { "type": "string", "minLength": 3 },
     "website": { "type": "string", "format": "uri" },
     "email": { "type": "string", "format": "email" },
@@ -65,6 +66,64 @@
           "properties": {
             "type": { "type": "string", "enum": ["google", "osm"] },
             "url":  { "type": "string", "format": "uri" }
+          }
+        }
+      }
+    },
+
+    "logo": {
+      "type": "object",
+      "required": ["path", "mime_type"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Relative Pfadangabe oder URL zum Logo"
+        },
+        "mime_type": {
+          "type": "string",
+          "enum": ["image/png", "image/jpeg", "image/svg+xml", "image/webp"]
+        }
+      }
+    },
+
+    "tariff_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "annual": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "description", "path", "years"],
+            "additionalProperties": false,
+            "properties": {
+              "id":        { "type": "string" },
+              "name":      { "type": "string" },
+              "description": { "type": "string" },
+              "path": {
+                "type": "string",
+                "format": "uri",
+                "description": "Pfad/URL mit optionalem Platzhalter {year}, z.B. .../{year}.json"
+              },
+              "years": {
+                "type": "object",
+                "required": ["from", "to"],
+                "additionalProperties": false,
+                "properties": {
+                  "from": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  },
+                  "to": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  }
+                }
+              }
+            }
           }
         }
       }
